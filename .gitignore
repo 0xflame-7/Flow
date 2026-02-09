@@ -3,3 +3,5 @@ node_modules
 .vscode-test/
 *.vsix
 prd.md
+ROADMAP.md
+.agent
