@@ -1,0 +1,99 @@
+/* Import Tailwind CSS */
+@import "tailwindcss";
+
+/* Define VSCode colors in :root for Tailwind to use */
+@layer theme {
+  :root {
+    /* VSCode color palette - mapped to Tailwind color system */
+    --color-vscode-primary: var(--vscode-button-background);
+    --color-vscode-primary-hover: var(--vscode-button-hoverBackground);
+    --color-vscode-text: var(--vscode-foreground);
+    --color-vscode-secondary: var(--vscode-descriptionForeground);
+    --color-vscode-background: var(--vscode-editor-background);
+    --color-vscode-sidebar: var(--vscode-sideBar-background);
+    --color-vscode-input-bg: var(--vscode-input-background);
+    --color-vscode-input: var(--vscode-input-border);
+    --color-vscode-focus: var(--vscode-focusBorder);
+    --color-vscode: var(--vscode-panel-border);
+  }
+}
+
+/* Reset default body styles to use VSCode theme */
+body {
+  margin: 0;
+  padding: 0;
+  color: var(--vscode-foreground);
+  background-color: var(--vscode-editor-background);
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  font-weight: var(--vscode-font-weight);
+}
+
+/* Additional utilities */
+@layer utilities {
+  /* Base VSCode color utilities */
+  .bg-vscode-primary {
+    background-color: var(--vscode-button-background);
+  }
+
+  .bg-vscode-primary-hover {
+    background-color: var(--vscode-button-hoverBackground);
+  }
+
+  .bg-vscode-background {
+    background-color: var(--vscode-editor-background);
+  }
+
+  .bg-vscode-sidebar {
+    background-color: var(--vscode-sideBar-background);
+  }
+
+  .bg-vscode-input-bg {
+    background-color: var(--vscode-input-background);
+  }
+
+  .text-vscode {
+    color: var(--vscode-foreground);
+  }
+
+  .text-vscode-secondary {
+    color: var(--vscode-descriptionForeground);
+  }
+
+  .border-vscode {
+    border-color: var(--vscode-panel-border);
+  }
+
+  .border-vscode-input {
+    border-color: var(--vscode-input-border);
+  }
+
+  .border-vscode-focus {
+    border-color: var(--vscode-focusBorder);
+  }
+
+  /* Hover variants - explicitly defined for VSCode colors */
+  .hover\:bg-vscode-primary-hover:hover {
+    background-color: var(--vscode-button-hoverBackground);
+  }
+
+  .hover\:bg-vscode-sidebar:hover {
+    background-color: var(--vscode-sideBar-background);
+  }
+
+  .hover\:border-vscode-focus:hover {
+    border-color: var(--vscode-focusBorder);
+  }
+
+  /* Make sure interactive elements have pointer cursor */
+  button,
+  a,
+  [role="button"] {
+    cursor: pointer;
+  }
+
+  /* Focus outline */
+  .focus-vscode:focus {
+    outline-color: var(--vscode-focusBorder);
+  }
+}

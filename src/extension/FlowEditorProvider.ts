@@ -22,6 +22,9 @@ export class FlowEditorProvider implements vscode.CustomTextEditorProvider {
     const scriptUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.context.extensionUri, "dist", "webview.js"),
     );
+    const styleUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.context.extensionUri, "dist", "webview.css"),
+    );
     //
     const nonce = getNonce();
 
@@ -32,18 +35,20 @@ export class FlowEditorProvider implements vscode.CustomTextEditorProvider {
       <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Flow Editor</title>
+      <link href="${styleUri}" rel="stylesheet">
       <style>
         body {
           margin: 0;
           padding: 0;
-          overflow: hidden;
+          overflow: auto;
           background-color: var(--vscode-editor-background);
           color: var(--vscode-editor-foreground);
           font-family: var(--vscode-font-family);
         }
         #root {
-          width: 100vw;
-          height: 100vh;
+          width: 100%;
+          min-height: 100vh;
+          overflow-y: auto;
         }
       </style>
     </head>
