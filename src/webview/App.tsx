@@ -1,4 +1,57 @@
+import { useEffect, useState } from "react";
+import {
+  ExtensionMessage,
+  FlowDocument,
+  WebviewMessage,
+} from "../types/MessageProtocol";
+import { Web } from "../utils/logger";
+
+declare const acquireVsCodeApi: () => { postMessage: (message: any) => void };
+
+const vscode = acquireVsCodeApi();
+Web.setVSCode(vscode);
+
 export default function App() {
+  const [document, setDocument] = useState<FlowDocument | null>(null);
+
+  useEffect(() => {
+    Web.info("App mounted, sending ready message");
+
+    // Send ready message to extension
+    const readyMessage: WebviewMessage = { type: "ready" };
+    vscode.postMessage(readyMessage);
+
+    const messageHandler = (event: MessageEvent) => {
+      const message: ExtensionMessage = event.data;
+      Web.info(`Received message from extension: ${message.type}`);
+
+      switch (message.type) {
+        case "init":
+        case "update":
+          Web.info("Document received", {
+            blocks: message.document.blocks.length,
+          });
+          setDocument(message.document);
+          break;
+
+        case "ack":
+          Web.info("Received acknowledgment", { success: message.success });
+          break;
+
+        default:
+          Web.warn("Unknown message type received");
+          break;
+      }
+    };
+
+    window.addEventListener("message", messageHandler);
+
+    return () => {
+      Web.info("App unmounting, removing message listener");
+      window.removeEventListener("message", messageHandler);
+    };
+  }, []);
+
   if (!document) {
     return (
       <div className="flex items-center justify-center w-full h-full p-5">

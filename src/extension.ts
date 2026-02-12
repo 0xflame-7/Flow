@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { FlowEditorProvider } from "./extension/FlowEditorProvider";
+import { defaultDoc } from "./utils/constants";
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -23,14 +24,9 @@ export function activate(context: vscode.ExtensionContext) {
       });
 
       if (uri) {
-        const defaultContent = {
-          layout: "masonry",
-          variables: {},
-          blocks: [],
-        };
         await vscode.workspace.fs.writeFile(
           uri,
-          Buffer.from(JSON.stringify(defaultContent, null, 2)),
+          Buffer.from(JSON.stringify(defaultDoc, null, 2)),
         );
         await vscode.commands.executeCommand(
           "vscode.openWith",
@@ -49,6 +45,8 @@ export function activate(context: vscode.ExtensionContext) {
     watcher.onDidChange(() => {
       vscode.commands.executeCommand("workbench.action.reloadWindow");
     });
+
+    context.subscriptions.push(watcher);
   }
 }
 
