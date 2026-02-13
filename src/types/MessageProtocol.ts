@@ -2,13 +2,15 @@
 export type ExtensionMessage =
   | { type: "init"; document: FlowDocument }
   | { type: "update"; document: FlowDocument }
-  | { type: "ack"; success: boolean };
+  | { type: "ack"; success: boolean }
+  | { type: "terminalOutput"; data: string }; // New type for terminal output
 
 // Message send FROM webview TO extension
 export type WebviewMessage =
   | { type: "ready" }
   | { type: "update"; document: FlowDocument }
-  | { type: "log"; message: string };
+  | { type: "log"; message: string }
+  | { type: "terminalInput"; data: string }; // New type for terminal input
 
 export interface FlowDocument {
   layout: "masonry" | "grid";
