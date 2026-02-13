@@ -16,10 +16,17 @@ export type WebviewMessage =
   | { type: "stop"; blockId: string }
   | { type: "terminalInput"; blockId: string; data: string };
 
+export interface FlowContext {
+  cwd: string;
+  branch: string;
+  shell: string;
+}
+
 export interface FlowDocument {
   layout: "masonry" | "grid";
   variables: Record<string, string>;
   blocks: FlowBlock[];
+  context?: FlowContext;
 }
 
 type ShellBlock = {
@@ -38,4 +45,5 @@ export type FlowBlock = (ShellBlock | MarkdownBlock) & {
   id: string;
   pos: { x: number; y: number; w: number; h: number };
   status?: "idle" | "running" | "success" | "error";
+  context?: FlowContext;
 };

@@ -1,10 +1,13 @@
 import * as vscode from "vscode";
 import * as os from "os";
 import * as cp from "child_process";
+import * as path from "path";
+import * as fs from "fs";
 import { Ext } from "../utils/logger";
 import {
   ExtensionMessage,
   FlowDocument,
+  FlowContext,
   WebviewMessage,
 } from "../types/MessageProtocol";
 import { defaultDoc } from "../utils/constants";
@@ -15,6 +18,13 @@ export class FlowEditorProvider implements vscode.CustomTextEditorProvider {
   private updatingDocuments = new Map<string, boolean>();
   // Map of blockId -> ChildProcess
   private blockProcesses = new Map<string, cp.ChildProcessWithoutNullStreams>();
+  private globalContext: FlowContext = {
+    cwd: os.homedir(),
+    branch: "main",
+    shell:
+      vscode.env.shell ||
+      (os.platform() === "win32" ? "powershell.exe" : "bash"),
+  };
 
   public resolveCustomTextEditor(
     document: vscode.TextDocument,
@@ -53,6 +63,8 @@ export class FlowEditorProvider implements vscode.CustomTextEditorProvider {
               isInitialLoad = false;
             } else {
               const doc = this.parseDocument(document);
+              // Update doc with latest global context
+              doc.context = { ...this.globalContext };
               this.sendDocument(webviewPanel, doc, isInitialLoad);
               isInitialLoad = false;
             }
@@ -131,6 +143,49 @@ export class FlowEditorProvider implements vscode.CustomTextEditorProvider {
       // User might want background tasks? "run independent process".
       // Let's kill them to avoid leaks for now.
       // TODO: Track blocks per document to kill only relevant ones.
+      // TODO: Track blocks per document to kill only relevant ones.
+    });
+
+    // Initial Context Load
+    this.refreshContext().then(() => {
+      // If webview is ready, push update?
+      // We handle this in 'ready' message usually, but if context finishes loading AFTER ready:
+      if (webviewReady) {
+        const doc = this.parseDocument(document);
+        doc.context = { ...this.globalContext };
+        this.sendDocument(webviewPanel, doc, false);
+      }
+    });
+  }
+
+  private async refreshContext() {
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    if (workspaceFolder) {
+      this.globalContext.cwd = workspaceFolder.uri.fsPath;
+      try {
+        const branch = await this.getGitBranch(this.globalContext.cwd);
+        if (branch) {
+          this.globalContext.branch = branch;
+        }
+      } catch (e) {
+        Ext.error("Failed to get git branch", e);
+      }
+    }
+    // Update shell from env in case it changed
+    if (vscode.env.shell) {
+      this.globalContext.shell = vscode.env.shell;
+    }
+  }
+
+  private getGitBranch(cwd: string): Promise<string> {
+    return new Promise((resolve) => {
+      cp.exec("git rev-parse --abbrev-ref HEAD", { cwd }, (err, stdout) => {
+        if (err) {
+          resolve("");
+        } else {
+          resolve(stdout.trim());
+        }
+      });
     });
   }
 
@@ -162,29 +217,77 @@ export class FlowEditorProvider implements vscode.CustomTextEditorProvider {
     // Send Start
     webviewPanel.webview.postMessage({ type: "executionStart", blockId });
 
-    // Determine Shell
-    const isWindows = os.platform() === "win32";
-    const shell = isWindows ? "powershell.exe" : "bash";
-    const shellArgs = isWindows ? ["-Command", cmd] : ["-c", cmd];
-    // Use shell: true to support redirection etc? allow spawning shell directly
-    // If we want interactivity, we usually spawn the shell and feed the command?
-    // User wants "input block" -> "output block".
-    // Simple spawn: cp.spawn(shell, args)
-    // NOTE: Interactive input (stdin) might differ if we use -c.
-    // If we use -c, the shell exits after command.
-    // If we want an interactive session, we should spawn shell and pipe command.
-    // But "independent process" suggests one-off command.
-    // Let's stick to spawning the command via shell.
+    // Determine Shell from Block Context or Global Context
+    let shellName = block.context?.shell || this.globalContext.shell;
 
-    // PROBLEM: stdin with "-c" might not work as expected for interactive apps.
-    // However, if the command IS an interactive app (e.g. "node"), it works.
+    // Fallback if global context shell is missing (unlikely with vscode.env.shell)
+    if (!shellName) {
+      // Try to get from vscode settings specifically as a fallback
+      const settings = vscode.workspace.getConfiguration("terminal.integrated");
+      const platform =
+        os.platform() === "win32"
+          ? "windows"
+          : os.platform() === "darwin"
+            ? "osx"
+            : "linux";
+      // This is legacy but still useful fallback
+      shellName =
+        settings.get(`shell.${platform}`) ||
+        (os.platform() === "win32" ? "powershell.exe" : "bash");
+    }
 
-    const cwd =
-      vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || os.homedir();
+    let shellExe = shellName;
+    let shellArgs: string[] = [];
+    const lowerName = shellName.toLowerCase();
+
+    // Heuristic to determine args based on shell executable name (full path or short name)
+    if (lowerName.includes("powershell") || lowerName.includes("pwsh")) {
+      // PowerShell needs -Command
+      shellArgs = ["-Command", cmd];
+    } else if (lowerName.includes("cmd.exe") || lowerName === "cmd") {
+      // CMD needs /C
+      shellArgs = ["/C", cmd];
+    } else if (
+      lowerName.includes("bash") ||
+      lowerName.includes("zsh") ||
+      lowerName.includes("sh") ||
+      lowerName.includes("fish")
+    ) {
+      // Unix shells mostly support -c
+      shellArgs = ["-c", cmd];
+    } else {
+      // Fallback for unknown shells, assume -c
+      shellArgs = ["-c", cmd];
+    }
+
+    const initialCwd = this.globalContext.cwd;
+
+    // SIMPLE CWD HANDLING: If command is 'cd <path>', try to resolve it for the NEXT command.
+    if (cmd.trim().startsWith("cd ") && block.type === "shell") {
+      const targetPath = cmd.trim().substring(3).trim();
+      try {
+        const newCwd = path.resolve(initialCwd, targetPath);
+        if (fs.existsSync(newCwd)) {
+          this.globalContext.cwd = newCwd;
+
+          // Attempt to update branch for the new CWD
+          this.getGitBranch(newCwd).then((branch) => {
+            if (branch) {
+              this.globalContext.branch = branch;
+            }
+            // Trigger context update to frontend
+            webviewPanel.webview.postMessage({
+              type: "update",
+              document: { ...doc, context: this.globalContext },
+            });
+          });
+        }
+      } catch (e) {}
+    }
 
     try {
-      const childProcess = cp.spawn(shell, shellArgs, {
-        cwd,
+      const childProcess = cp.spawn(shellExe, shellArgs, {
+        cwd: initialCwd, // Run in the CWD *before* the cd took effect
         env: { ...process.env, ...doc.variables, FORCE_COLOR: "1" },
         shell: false, // We are invoking shell explicitly
       });

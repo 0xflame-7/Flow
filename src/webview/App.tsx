@@ -1,12 +1,15 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import Ansi from "ansi-to-react";
+import { GitBranch, FolderOpen } from "lucide-react";
 import {
   ExtensionMessage,
   WebviewMessage,
   FlowDocument,
   FlowBlock,
+  FlowContext,
 } from "../types/MessageProtocol";
 import { Web } from "../utils/logger";
+import { InputSection } from "./components/InputSection";
 
 declare const acquireVsCodeApi: () => { postMessage: (message: any) => void };
 
@@ -15,6 +18,13 @@ Web.setVSCode(vscode);
 
 // Helper for generating IDs
 const generateId = () => Math.random().toString(36).substr(2, 9);
+
+// Mock initial context if none provided (could be replaced by init message)
+const DEFAULT_CONTEXT: FlowContext = {
+  cwd: "~/work/project",
+  branch: "main",
+  shell: "bash",
+};
 
 const ShellBlockComponent = ({
   block,
@@ -47,63 +57,85 @@ const ShellBlockComponent = ({
   };
 
   const isRunning = block.status === "running";
+  const context = block.context || DEFAULT_CONTEXT;
 
   return (
-    <div className="border border-vscode-panel-border rounded mb-4 bg-vscode-editor-background overflow-hidden flex flex-col">
-      {/* Header / Command Input */}
-      <div className="flex items-center p-2 bg-vscode-editor-header-background border-b border-vscode-panel-border">
-        <div className="font-bold text-xs mr-2 opacity-50 uppercase tracking-wider">
-          SHELL
-        </div>
-        <input
-          className="flex-1 bg-transparent border border-transparent hover:border-vscode-input-border focus:border-vscode-focusBorder rounded px-2 py-1 text-vscode-input-foreground outline-none"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Enter command..."
-          disabled={isRunning}
-        />
-        <div className="flex gap-2 ml-2">
-          {isRunning ? (
-            <button
-              onClick={() => onStop(block.id)}
-              className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs uppercase font-medium"
-            >
-              Stop
-            </button>
-          ) : (
-            <button
-              onClick={() => onRun(block.id, input)}
-              className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs uppercase font-medium"
-            >
-              Run
-            </button>
+    <div className="border border-vscode-panel-border rounded mb-4 bg-vscode-editor-background overflow-hidden flex flex-col group relative hover:bg-vscode-list-hoverBackground transition-colors duration-200">
+      {/* Block Header / Context Info */}
+      <div className="flex items-center justify-between p-2 text-xs select-none">
+        <div className="flex items-center gap-2 text-vscode-descriptionForeground">
+          <span className="font-bold opacity-70">#{block.id.substr(0, 4)}</span>
+          {block.status === "success" && (
+            <span className="text-vscode-ansi-green">✓</span>
           )}
+          {block.status === "error" && (
+            <span className="text-vscode-error">✗</span>
+          )}
+
+          <span className="text-vscode-button-background font-bold ml-2">
+            [local]
+          </span>
+          <div className="flex items-center gap-1">
+            <GitBranch size={12} />
+            <span>{context.branch}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <FolderOpen size={12} />
+            <span className="truncate max-w-[150px]" title={context.cwd}>
+              {context.cwd}
+            </span>
+          </div>
+          <span className="text-vscode-button-background font-bold">$</span>
+          <span className="text-vscode-foreground font-medium">
+            {block.cmd}
+          </span>
+        </div>
+
+        {/* Actions */}
+        <div className="opacity-0 group-hover:opacity-100 transition-all duration-200 z-10 flex items-center gap-1 bg-vscode-editor-background rounded p-0.5 border border-vscode-input-border">
+          <button
+            onClick={() => onRun(block.id, input)}
+            className="p-1 text-vscode-descriptionForeground hover:text-vscode-foreground rounded"
+            title="Re-run"
+          >
+            <span className="material-symbols-outlined text-lg leading-none">
+              refresh
+            </span>
+          </button>
           <button
             onClick={() => onDelete(block.id)}
-            className="px-2 py-1 hover:bg-vscode-toolbar-hoverBackground rounded text-vscode-foreground opacity-60 hover:opacity-100"
-            title="Delete Block"
+            className="p-1 text-vscode-descriptionForeground hover:text-red-400 rounded"
+            title="Delete"
           >
-            ✕
+            <span className="material-symbols-outlined text-lg leading-none">
+              delete
+            </span>
           </button>
         </div>
       </div>
 
+      {block.status === "idle" &&
+        // Use a simple display for idle blocks if we want to show anything,
+        // or rely on the header. But the header shows the command.
+        // We can show nothing here or the output if it exists from previous run (re-hydration).
+        null}
+
       {/* Output Area */}
       {(block.output || isRunning) && (
-        <div className="p-2 border-t border-vscode-panel-border bg-[#000000] min-h-[100px] max-h-[400px] flex flex-col">
+        <div className="p-2 border-t border-vscode-panel-border bg-vscode-terminal-bg min-h-[100px] max-h-[400px] flex flex-col">
           <div
             ref={outputRef}
-            className="flex-1 overflow-auto whitespace-pre-wrap break-all font-mono text-sm p-2"
+            className="flex-1 overflow-auto whitespace-pre-wrap break-all font-mono text-sm p-2 text-vscode-terminal-fg"
           >
             <Ansi>{block.output || ""}</Ansi>
             {block.exitCode !== undefined && (
-              <div className="mt-2 text-xs opacity-50">
+              <div className="mt-2 text-xs opacity-50 text-gray-400">
                 Process exited with code {block.exitCode}
               </div>
             )}
           </div>
 
-          {/* Stdin Input (One-line at bottom) */}
+          {/* Stdin Input */}
           {isRunning && (
             <div className="flex items-center border-t border-gray-800 mt-1 pt-1">
               <span className="text-gray-500 mr-2">$</span>
@@ -112,7 +144,7 @@ const ShellBlockComponent = ({
                 value={terminalInput}
                 onChange={(e) => setTerminalInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="flex-1 bg-transparent border-none text-white outline-none font-mono text-sm"
+                className="flex-1 bg-transparent border-none text-vscode-terminal-fg outline-none font-mono text-sm focus:ring-0"
                 placeholder="Type input..."
                 autoFocus
               />
@@ -129,6 +161,7 @@ export default function App() {
     layout: "grid",
     variables: {},
     blocks: [],
+    context: DEFAULT_CONTEXT,
   });
 
   const updateDoc = useCallback((newDoc: FlowDocument) => {
@@ -195,40 +228,20 @@ export default function App() {
     return () => window.removeEventListener("message", messageHandler);
   }, []);
 
-  const addShellBlock = () => {
-    const newBlock: Extract<FlowBlock, { type: "shell" }> = {
-      id: generateId(),
-      type: "shell",
-      cmd: "",
-      pos: { x: 0, y: 0, w: 1, h: 1 },
-      status: "idle",
-      output: "",
-    };
-    updateDoc({ ...doc, blocks: [...doc.blocks, newBlock] });
-  };
-
   const deleteBlock = (id: string) => {
     updateDoc({ ...doc, blocks: doc.blocks.filter((b) => b.id !== id) });
   };
 
   const runBlock = (id: string, cmd: string) => {
-    // Optimistic update
+    // Re-run existing block
     setDoc((prev) => ({
       ...prev,
       blocks: prev.blocks.map((b) =>
-        b.id === id && b.type === "shell" ? { ...b, cmd } : b,
+        b.id === id && b.type === "shell"
+          ? { ...b, cmd, status: "running", output: "" }
+          : b,
       ),
     }));
-    // Also save the cmd change to document before running? Yes.
-    vscode.postMessage({
-      type: "update",
-      document: {
-        ...doc,
-        blocks: doc.blocks.map((b) =>
-          b.id === id && b.type === "shell" ? { ...b, cmd } : b,
-        ),
-      },
-    });
 
     vscode.postMessage({ type: "execute", blockId: id, cmd });
   };
@@ -241,19 +254,46 @@ export default function App() {
     vscode.postMessage({ type: "terminalInput", blockId: id, data });
   };
 
-  return (
-    <div className="p-4 bg-vscode-editor-background min-h-screen">
-      <div className="mb-4 flex justify-between items-center">
-        <h1 className="text-xl font-bold text-vscode-foreground">Flow</h1>
-        <button
-          onClick={addShellBlock}
-          className="px-3 py-1 md:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium text-sm transition-colors"
-        >
-          + Add Block
-        </button>
-      </div>
+  // Main Action: Run command from Input Section
+  const handleInputRun = (cmd: string) => {
+    const newBlock: Extract<FlowBlock, { type: "shell" }> = {
+      id: generateId(),
+      type: "shell",
+      cmd: cmd,
+      pos: { x: 0, y: 0, w: 1, h: 1 },
+      status: "running",
+      output: "",
+      // Use a COPY of the current global context
+      context: { ...doc.context! },
+    };
 
-      <div className="space-y-4">
+    // Add new block to the end
+    const newBlocks = [...doc.blocks, newBlock];
+    const newDoc = { ...doc, blocks: newBlocks };
+
+    setDoc(newDoc);
+    vscode.postMessage({ type: "update", document: newDoc });
+    vscode.postMessage({ type: "execute", blockId: newBlock.id, cmd });
+  };
+
+  const handleShellChange = (shell: string) => {
+    const newContext = { ...doc.context!, shell };
+    const newDoc = { ...doc, context: newContext };
+    setDoc(newDoc);
+    vscode.postMessage({ type: "update", document: newDoc });
+  };
+
+  return (
+    <div className="bg-vscode-editor-background h-screen flex flex-col font-mono text-sm antialiased overflow-hidden">
+      {/* Scrollable Main Area */}
+      <main className="flex-1 overflow-y-auto p-4 space-y-4">
+        {doc.blocks.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full opacity-50 text-vscode-descriptionForeground">
+            <div className="text-xl mb-2">Welcome to Flow</div>
+            <div className="text-sm">Type a command below to start</div>
+          </div>
+        )}
+
         {doc.blocks.map((block) => {
           if (block.type === "shell") {
             return (
@@ -269,13 +309,14 @@ export default function App() {
           }
           return null;
         })}
+      </main>
 
-        {doc.blocks.length === 0 && (
-          <div className="text-center p-8 opacity-50 border border-dashed border-vscode-panel-border rounded">
-            No blocks yet. Click "Add Block" to start.
-          </div>
-        )}
-      </div>
+      {/* Fixed Input Section */}
+      <InputSection
+        context={doc.context || DEFAULT_CONTEXT}
+        onRun={handleInputRun}
+        onShellChange={handleShellChange}
+      />
     </div>
   );
 }
