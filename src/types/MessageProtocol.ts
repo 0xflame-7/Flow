@@ -3,14 +3,18 @@ export type ExtensionMessage =
   | { type: "init"; document: FlowDocument }
   | { type: "update"; document: FlowDocument }
   | { type: "ack"; success: boolean }
-  | { type: "terminalOutput"; data: string }; // New type for terminal output
+  | { type: "executionStart"; blockId: string }
+  | { type: "executionOutput"; blockId: string; data: string }
+  | { type: "executionEnd"; blockId: string; exitCode: number };
 
 // Message send FROM webview TO extension
 export type WebviewMessage =
   | { type: "ready" }
   | { type: "update"; document: FlowDocument }
   | { type: "log"; message: string }
-  | { type: "terminalInput"; data: string }; // New type for terminal input
+  | { type: "execute"; blockId: string; cmd: string }
+  | { type: "stop"; blockId: string }
+  | { type: "terminalInput"; blockId: string; data: string };
 
 export interface FlowDocument {
   layout: "masonry" | "grid";

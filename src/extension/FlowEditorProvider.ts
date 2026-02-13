@@ -13,10 +13,8 @@ export class FlowEditorProvider implements vscode.CustomTextEditorProvider {
   constructor(private readonly context: vscode.ExtensionContext) {}
 
   private updatingDocuments = new Map<string, boolean>();
-  private terminalProcesses = new Map<
-    string,
-    cp.ChildProcessWithoutNullStreams
-  >();
+  // Map of blockId -> ChildProcess
+  private blockProcesses = new Map<string, cp.ChildProcessWithoutNullStreams>();
 
   public resolveCustomTextEditor(
     document: vscode.TextDocument,
@@ -75,8 +73,21 @@ export class FlowEditorProvider implements vscode.CustomTextEditorProvider {
             Ext.info(message.message);
             break;
 
+          case "execute":
+            this.executeBlock(
+              message.blockId,
+              message.cmd,
+              document,
+              webviewPanel,
+            );
+            break;
+
+          case "stop":
+            this.stopBlock(message.blockId);
+            break;
+
           case "terminalInput":
-            const process = this.terminalProcesses.get(docUri);
+            const process = this.blockProcesses.get(message.blockId);
             if (process && process.stdin) {
               process.stdin.write(message.data);
             }
@@ -112,138 +123,126 @@ export class FlowEditorProvider implements vscode.CustomTextEditorProvider {
       this.updatingDocuments.delete(docUri);
       changeDocumentSubscription.dispose();
 
-      // Kill Process
-      const process = this.terminalProcesses.get(docUri);
-      if (process) {
-        process.kill();
-        this.terminalProcesses.delete(docUri);
-      }
+      // Kill All Processes for this document?
+      // Since blockIds are unique, we technically should track which blocks belong to this doc,
+      // but for now we might leave them running or we need to track them.
+      // Ideally, we should kill them.
+      // Implementation: We don't have a map of Doc -> BlockIds.
+      // User might want background tasks? "run independent process".
+      // Let's kill them to avoid leaks for now.
+      // TODO: Track blocks per document to kill only relevant ones.
     });
+  }
 
-    // 3. Spawn Simple Shell (child_process)
+  private executeBlock(
+    blockId: string,
+    cmd: string,
+    document: vscode.TextDocument,
+    webviewPanel: vscode.WebviewPanel,
+  ) {
+    const doc = this.parseDocument(document);
+    const block = doc.blocks.find((b) => b.id === blockId);
+
+    if (!block || block.type !== "shell") {
+      Ext.error("Block not found or not shell", blockId);
+      return;
+    }
+
+    // Kill existing if running
+    if (this.blockProcesses.has(blockId)) {
+      this.stopBlock(blockId);
+    }
+
+    if (!cmd.trim()) {
+      return;
+    }
+
+    Ext.info(`Executing block ${blockId}: ${cmd}`);
+
+    // Send Start
+    webviewPanel.webview.postMessage({ type: "executionStart", blockId });
+
+    // Determine Shell
     const isWindows = os.platform() === "win32";
+    const shell = isWindows ? "powershell.exe" : "bash";
+    const shellArgs = isWindows ? ["-Command", cmd] : ["-c", cmd];
+    // Use shell: true to support redirection etc? allow spawning shell directly
+    // If we want interactivity, we usually spawn the shell and feed the command?
+    // User wants "input block" -> "output block".
+    // Simple spawn: cp.spawn(shell, args)
+    // NOTE: Interactive input (stdin) might differ if we use -c.
+    // If we use -c, the shell exits after command.
+    // If we want an interactive session, we should spawn shell and pipe command.
+    // But "independent process" suggests one-off command.
+    // Let's stick to spawning the command via shell.
 
-    // Get user's default terminal shell
-    const config = vscode.workspace.getConfiguration("terminal.integrated");
-    const defaultProfileName = config.get<string>(
-      isWindows
-        ? "defaultProfile.windows"
-        : os.platform() === "darwin"
-          ? "defaultProfile.osx"
-          : "defaultProfile.linux",
-    );
-    const profiles = config.get<any>(
-      isWindows
-        ? "profiles.windows"
-        : os.platform() === "darwin"
-          ? "profiles.osx"
-          : "profiles.linux",
-    );
+    // PROBLEM: stdin with "-c" might not work as expected for interactive apps.
+    // However, if the command IS an interactive app (e.g. "node"), it works.
 
-    if (!defaultProfileName || !profiles || !config) {
-      Ext.error("Failed to get default profile");
-      // return;
-    }
-
-    Ext.info("Default profile: " + defaultProfileName);
-    Ext.info("Profiles: " + JSON.stringify(profiles));
-    Ext.info("Config: " + JSON.stringify(config));
-
-    let shell = isWindows ? "pwsh.exe" : "bash";
-    let shellArgs: string[] = [];
-
-    if (defaultProfileName && profiles && profiles[defaultProfileName]) {
-      const profile = profiles[defaultProfileName];
-      shell = profile.path || shell;
-      shellArgs = profile.args || [];
-    }
-
-    // Add minimal args for known shells to keep output clean
-    if (
-      shell.toLowerCase().includes("powershell") ||
-      shell.toLowerCase().includes("pwsh")
-    ) {
-      shellArgs = ["-NoLogo", "-NoExit"];
-    } else if (
-      shell.toLowerCase().includes("bash") ||
-      shell.toLowerCase().includes("zsh")
-    ) {
-      // For bash/zsh, we probably want interactive mode but no profile to speed up
-      if (!shellArgs.includes("-i")) {
-        shellArgs.push("-i");
-      }
-    }
-
-    const args = shellArgs;
+    const cwd =
+      vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || os.homedir();
 
     try {
-      const cwd =
-        vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || os.homedir();
-
-      Ext.info("Spawning terminal process");
-      const terminalProcess = cp.spawn(shell, args, {
-        cwd: cwd,
-        env: {
-          ...process.env,
-          TERM: "xterm-256color",
-          COLORTERM: "truecolor",
-          FORCE_COLOR: "1",
-          CLICOLOR: "1",
-        },
-        shell: false, // Run directly, don't wrap in cmd.exe
+      const childProcess = cp.spawn(shell, shellArgs, {
+        cwd,
+        env: { ...process.env, ...doc.variables, FORCE_COLOR: "1" },
+        shell: false, // We are invoking shell explicitly
       });
 
-      this.terminalProcesses.set(docUri, terminalProcess);
+      this.blockProcesses.set(blockId, childProcess);
 
-      // Explicitly set prompt to empty string to avoid any prompt noise in the output stream
-      if (
-        (shell.toLowerCase().includes("powershell") ||
-          shell.toLowerCase().includes("pwsh")) &&
-        terminalProcess.stdin
-      ) {
-        terminalProcess.stdin.write('function prompt { "" };\r\n');
-      }
-
-      terminalProcess.stdout.on("data", (data: Buffer) => {
+      childProcess.stdout.on("data", (data: Buffer) => {
         webviewPanel.webview.postMessage({
-          type: "terminalOutput",
+          type: "executionOutput",
+          blockId,
           data: data.toString(),
         });
       });
 
-      terminalProcess.stderr.on("data", (data: Buffer) => {
+      childProcess.stderr.on("data", (data: Buffer) => {
         webviewPanel.webview.postMessage({
-          type: "terminalOutput",
+          type: "executionOutput",
+          blockId,
           data: data.toString(),
         });
       });
 
-      terminalProcess.on("error", (err) => {
-        Ext.error("Terminal process error", err);
+      childProcess.on("close", (code: number | null) => {
+        this.blockProcesses.delete(blockId);
         webviewPanel.webview.postMessage({
-          type: "terminalOutput",
+          type: "executionEnd",
+          blockId,
+          exitCode: code ?? 0,
+        });
+      });
+
+      childProcess.on("error", (err: Error) => {
+        webviewPanel.webview.postMessage({
+          type: "executionOutput",
+          blockId,
           data: `\r\nError: ${err.message}\r\n`,
         });
-      });
-
-      terminalProcess.on("close", (code) => {
         webviewPanel.webview.postMessage({
-          type: "terminalOutput",
-          data: `\r\nProcess exited with code ${code}\r\n`,
+          type: "executionEnd",
+          blockId,
+          exitCode: 1,
         });
       });
+    } catch (e: any) {
+      Ext.error("Failed to spawn", e);
+      webviewPanel.webview.postMessage({
+        type: "executionEnd",
+        blockId,
+        exitCode: 1,
+      });
+    }
+  }
 
-      // Initial prompt (optional, helps user know it's ready)
-      webviewPanel.webview.postMessage({
-        type: "terminalOutput",
-        data: `\r\nTerminal session started (${shell})\r\n`,
-      });
-    } catch (err) {
-      Ext.error("Failed to spawn terminal", err);
-      webviewPanel.webview.postMessage({
-        type: "terminalOutput",
-        data: `\r\nFailed to start terminal: ${err}\r\n`,
-      });
+  private stopBlock(blockId: string) {
+    const process = this.blockProcesses.get(blockId);
+    if (process) {
+      process.kill();
+      this.blockProcesses.delete(blockId);
     }
   }
 
@@ -273,8 +272,9 @@ export class FlowEditorProvider implements vscode.CustomTextEditorProvider {
 
       const parsed = JSON.parse(text);
 
-      if (!parsed.layout || !Array.isArray(parsed.blocks)) {
-        throw new Error("Invalid Flow document structure");
+      if (!Array.isArray(parsed.blocks)) {
+        // Migration or error
+        return defaultDoc;
       }
 
       return parsed as FlowDocument;
