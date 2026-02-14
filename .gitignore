@@ -4,3 +4,4 @@ node_modules
 *.vsix
 .agent
 *.agent.md
+*.flow

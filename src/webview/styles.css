@@ -15,6 +15,28 @@
     --color-vscode-input: var(--vscode-input-border);
     --color-vscode-focus: var(--vscode-focusBorder);
     --color-vscode: var(--vscode-panel-border);
+
+    /* New Colors */
+    --color-vscode-error: var(--vscode-errorForeground);
+    --color-vscode-list-active: var(--vscode-list-activeSelectionBackground);
+    --color-vscode-list-hover: var(--vscode-list-hoverBackground);
+    --color-vscode-activity-bar: var(--vscode-activityBar-background);
+    --color-vscode-status-bar: var(--vscode-statusBar-background);
+    --color-vscode-widget-bg: var(--vscode-editorWidget-background);
+    --color-vscode-selection: var(--vscode-editor-selectionBackground);
+    --color-vscode-status-bar-debug: var(
+      --vscode-statusBar-debuggingBackground
+    );
+    --color-vscode-status-bar-no-folder: var(
+      --vscode-statusBar-noFolderBackground
+    );
+
+    /* Menu Colors */
+    --color-vscode-menu: var(--vscode-menu-background);
+    --color-vscode-menu-border: var(--vscode-menu-border);
+    --color-vscode-menu-fg: var(--vscode-menu-foreground);
+    --color-vscode-menu-selection: var(--vscode-menu-selectionBackground);
+    --color-vscode-menu-selection-fg: var(--vscode-menu-selectionForeground);
   }
 }
 
@@ -95,5 +117,64 @@ body {
   /* Focus outline */
   .focus-vscode:focus {
     outline-color: var(--vscode-focusBorder);
+  }
+
+  /* New Color Utilities */
+  .text-vscode-error {
+    color: var(--vscode-errorForeground);
+  }
+
+  .bg-vscode-list-active {
+    background-color: var(--vscode-list-activeSelectionBackground);
+  }
+
+  .bg-vscode-list-hover {
+    background-color: var(--vscode-list-hoverBackground);
+  }
+
+  .bg-vscode-activity-bar {
+    background-color: var(--vscode-activityBar-background);
+  }
+
+  .bg-vscode-status-bar {
+    background-color: var(--vscode-statusBar-background);
+  }
+
+  .bg-vscode-widget {
+    background-color: var(--vscode-editorWidget-background);
+  }
+
+  .bg-vscode-selection {
+    background-color: var(--vscode-editor-selectionBackground);
+  }
+
+  /* Status Bar Variants */
+  .bg-vscode-status-bar-debug {
+    background-color: var(--vscode-statusBar-debuggingBackground);
+  }
+
+  .bg-vscode-status-bar-no-folder {
+    background-color: var(--vscode-statusBar-noFolderBackground);
+  }
+
+  /* Menu Utilities */
+  .bg-vscode-menu {
+    background-color: var(--vscode-menu-background);
+  }
+
+  .border-vscode-menu {
+    border-color: var(--vscode-menu-border);
+  }
+
+  .text-vscode-menu {
+    color: var(--vscode-menu-foreground);
+  }
+
+  .bg-vscode-menu-selection {
+    background-color: var(--vscode-menu-selectionBackground);
+  }
+
+  .text-vscode-menu-selection {
+    color: var(--vscode-menu-selectionForeground);
   }
 }

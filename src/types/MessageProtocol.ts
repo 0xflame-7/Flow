@@ -5,7 +5,11 @@ export type ExtensionMessage =
   | { type: "ack"; success: boolean }
   | { type: "executionStart"; blockId: string }
   | { type: "executionOutput"; blockId: string; data: string }
-  | { type: "executionEnd"; blockId: string; exitCode: number };
+  | { type: "executionEnd"; blockId: string; exitCode: number }
+  | {
+      type: "shellConfig";
+      shells: { label: string; path: string; icon: string }[];
+    };
 
 // Message send FROM webview TO extension
 export type WebviewMessage =
@@ -14,7 +18,8 @@ export type WebviewMessage =
   | { type: "log"; message: string }
   | { type: "execute"; blockId: string; cmd: string }
   | { type: "stop"; blockId: string }
-  | { type: "terminalInput"; blockId: string; data: string };
+  | { type: "terminalInput"; blockId: string; data: string }
+  | { type: "requestShellConfig" };
 
 export interface FlowContext {
   cwd: string;
