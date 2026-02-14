@@ -1,180 +1,242 @@
-/* Import Tailwind CSS */
 @import "tailwindcss";
 
-/* Define VSCode colors in :root for Tailwind to use */
-@layer theme {
-  :root {
-    /* VSCode color palette - mapped to Tailwind color system */
-    --color-vscode-primary: var(--vscode-button-background);
-    --color-vscode-primary-hover: var(--vscode-button-hoverBackground);
-    --color-vscode-text: var(--vscode-foreground);
-    --color-vscode-secondary: var(--vscode-descriptionForeground);
-    --color-vscode-background: var(--vscode-editor-background);
-    --color-vscode-sidebar: var(--vscode-sideBar-background);
-    --color-vscode-input-bg: var(--vscode-input-background);
-    --color-vscode-input: var(--vscode-input-border);
-    --color-vscode-focus: var(--vscode-focusBorder);
-    --color-vscode: var(--vscode-panel-border);
-
-    /* New Colors */
-    --color-vscode-error: var(--vscode-errorForeground);
-    --color-vscode-list-active: var(--vscode-list-activeSelectionBackground);
-    --color-vscode-list-hover: var(--vscode-list-hoverBackground);
-    --color-vscode-activity-bar: var(--vscode-activityBar-background);
-    --color-vscode-status-bar: var(--vscode-statusBar-background);
-    --color-vscode-widget-bg: var(--vscode-editorWidget-background);
-    --color-vscode-selection: var(--vscode-editor-selectionBackground);
-    --color-vscode-status-bar-debug: var(
-      --vscode-statusBar-debuggingBackground
-    );
-    --color-vscode-status-bar-no-folder: var(
-      --vscode-statusBar-noFolderBackground
-    );
-
-    /* Menu Colors */
-    --color-vscode-menu: var(--vscode-menu-background);
-    --color-vscode-menu-border: var(--vscode-menu-border);
-    --color-vscode-menu-fg: var(--vscode-menu-foreground);
-    --color-vscode-menu-selection: var(--vscode-menu-selectionBackground);
-    --color-vscode-menu-selection-fg: var(--vscode-menu-selectionForeground);
-  }
-}
-
-/* Reset default body styles to use VSCode theme */
-body {
-  margin: 0;
-  padding: 0;
-  color: var(--vscode-foreground);
-  background-color: var(--vscode-editor-background);
-  font-family: var(--vscode-font-family);
-  font-size: var(--vscode-font-size);
-  font-weight: var(--vscode-font-weight);
-}
-
-/* Additional utilities */
-@layer utilities {
-  /* Base VSCode color utilities */
-  .bg-vscode-primary {
-    background-color: var(--vscode-button-background);
-  }
-
-  .bg-vscode-primary-hover {
-    background-color: var(--vscode-button-hoverBackground);
-  }
-
-  .bg-vscode-background {
-    background-color: var(--vscode-editor-background);
-  }
-
-  .bg-vscode-sidebar {
-    background-color: var(--vscode-sideBar-background);
-  }
-
-  .bg-vscode-input-bg {
-    background-color: var(--vscode-input-background);
-  }
-
-  .text-vscode {
+@layer base {
+  body {
+    margin: 0;
+    padding: 0;
     color: var(--vscode-foreground);
+    background-color: var(--vscode-editor-background);
+    font-family: var(--vscode-font-family);
+    font-size: var(--vscode-font-size);
+    font-weight: var(--vscode-font-weight);
   }
 
-  .text-vscode-secondary {
-    color: var(--vscode-descriptionForeground);
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
   }
 
-  .border-vscode {
-    border-color: var(--vscode-panel-border);
+  ::-webkit-scrollbar-track {
+    background: transparent;
   }
 
-  .border-vscode-input {
-    border-color: var(--vscode-input-border);
+  ::-webkit-scrollbar-corner {
+    background: transparent;
   }
 
-  .border-vscode-focus {
-    border-color: var(--vscode-focusBorder);
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--vscode-scrollbarSlider-background);
   }
 
-  /* Hover variants - explicitly defined for VSCode colors */
-  .hover\:bg-vscode-primary-hover:hover {
-    background-color: var(--vscode-button-hoverBackground);
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--vscode-scrollbarSlider-hoverBackground);
   }
 
-  .hover\:bg-vscode-sidebar:hover {
-    background-color: var(--vscode-sideBar-background);
+  ::-webkit-scrollbar-thumb:active {
+    background-color: var(--vscode-scrollbarSlider-activeBackground);
+  }
+}
+
+/* 
+@layer components {
+  .command-block {
+    @apply group relative rounded-lg p-3;
+    @apply hover:bg-vscode-sidebar transition-colors duration-200;
+    @apply border border-transparent;
   }
 
-  .hover\:border-vscode-focus:hover {
-    border-color: var(--vscode-focusBorder);
+  .command-block-running {
+    @apply bg-vscode-blue/5 border-vscode-blue/40;
+    box-shadow: 0 0 10px rgba(0, 122, 204, 0.1);
   }
 
-  /* Make sure interactive elements have pointer cursor */
-  button,
-  a,
-  [role="button"] {
-    cursor: pointer;
+  .command-toolbar {
+    @apply absolute top-2 right-2 flex items-center gap-0.5;
+    @apply opacity-0 group-hover:opacity-100 transition-all duration-200;
+    @apply bg-vscode-sidebar rounded-md shadow-sm border border-vscode-border p-0.5;
+    @apply z-10;
   }
 
-  /* Focus outline */
-  .focus-vscode:focus {
-    outline-color: var(--vscode-focusBorder);
+  .command-toolbar-visible {
+    @apply opacity-100;
   }
 
-  /* New Color Utilities */
-  .text-vscode-error {
-    color: var(--vscode-errorForeground);
+  .toolbar-btn {
+    @apply p-1 text-vscode-fg rounded;
+    @apply hover:bg-vscode-input hover:text-white;
+    @apply transition-colors;
   }
 
-  .bg-vscode-list-active {
-    background-color: var(--vscode-list-activeSelectionBackground);
+  .toolbar-btn-active {
+    @apply text-white bg-vscode-blue/20;
+    @apply hover:bg-vscode-blue/30;
   }
 
-  .bg-vscode-list-hover {
-    background-color: var(--vscode-list-hoverBackground);
+  .toolbar-btn-delete {
+    @apply hover:text-red-400;
   }
 
-  .bg-vscode-activity-bar {
-    background-color: var(--vscode-activityBar-background);
+  .toolbar-separator {
+    @apply w-px h-4 bg-vscode-border mx-0.5;
   }
 
-  .bg-vscode-status-bar {
-    background-color: var(--vscode-statusBar-background);
+  .drag-handle {
+    @apply cursor-grab;
   }
 
-  .bg-vscode-widget {
-    background-color: var(--vscode-editorWidget-background);
+  .drag-handle:active {
+    @apply cursor-grabbing;
   }
 
-  .bg-vscode-selection {
+  .context-menu {
+    @apply bg-vscode-menu border border-vscode-menu-border rounded shadow-vscode-menu;
+    @apply py-1 text-xs select-none;
+  }
+
+  .context-menu-item {
+    @apply flex items-center px-3 py-1.5;
+    @apply text-vscode-menu-fg cursor-pointer;
+    @apply hover:bg-vscode-menu-hover hover:text-white;
+    @apply transition-colors;
+  }
+
+  .context-menu-item-danger {
+    @apply text-red-400;
+  }
+
+  .context-menu-separator {
+    @apply h-px bg-vscode-border mx-1 my-1;
+  }
+
+  .search-bar {
+    @apply bg-vscode-sidebar border border-vscode-border rounded-md;
+    @apply flex items-center p-1 gap-1 shadow-md;
+  }
+
+  .search-input {
+    @apply flex-1 bg-vscode-input border-none text-white text-xs;
+    @apply rounded-sm;
+    @apply focus:ring-1 focus:ring-vscode-focus-border;
+  }
+
+  .search-counter {
+    @apply flex items-center gap-0.5 text-vscode-secondary text-[10px];
+    @apply px-1 select-none whitespace-nowrap;
+  }
+
+  .search-highlight {
+    @apply bg-[#613214] text-white rounded-sm px-px;
+  }
+
+  .search-highlight-current {
+    @apply bg-[#9c5d02] text-white rounded-sm px-px;
+    box-shadow: 0 0 0 1px #ff9d00;
+  }
+
+  .input-shell-selector {
+    @apply flex items-center border-r border-vscode-border shrink-0;
+  }
+
+  .shell-selector-btn {
+    @apply flex items-center gap-1.5 px-3 py-2;
+    @apply text-vscode-secondary;
+    @apply hover:text-white hover:bg-vscode-input;
+    @apply transition-colors;
+  }
+
+  .block-metadata {
+    @apply flex items-center space-x-2 text-vscode-secondary text-xs mb-2 select-none;
+  }
+
+  .command-prompt {
+    @apply flex flex-wrap items-center gap-x-2 font-medium;
+  }
+
+  .terminal-output {
+    @apply text-vscode-secondary mt-2 space-y-1 pl-2;
+    @apply border-l-2 border-vscode-border;
+    @apply text-xs font-mono;
+  }
+
+  .terminal-output-active {
+    @apply border-vscode-secondary;
+  }
+
+  .running-indicator {
+    @apply absolute left-0 top-3 bottom-3 w-0.5 bg-vscode-blue rounded-r-full;
+  }
+
+  .drop-zone {
+    @apply absolute right-0 top-0 bottom-0 w-1/2;
+    @apply bg-vscode-blue/10 border-2 border-dashed border-vscode-blue/50;
+    @apply rounded-r-lg flex flex-col items-center justify-center gap-2;
+    @apply backdrop-blur-[1px] z-30;
+  }
+
+  .tab-bar {
+    @apply flex items-end h-9 overflow-x-auto select-none;
+  }
+
+  .tab {
+    @apply px-3 py-2 min-w-[140px] max-w-[200px];
+    @apply flex items-center justify-between text-xs;
+    @apply cursor-pointer transition-colors;
+  }
+
+  .tab-active {
+    @apply bg-vscode-bg text-white border-t border-vscode-blue;
+    @apply cursor-default;
+  }
+
+  .tab-inactive {
+    @apply bg-vscode-sidebar text-vscode-secondary;
+    @apply border-r border-vscode-bg;
+    @apply hover:bg-vscode-bg/50;
+  }
+
+  .breadcrumb {
+    @apply flex items-center px-4 gap-1 text-xs text-vscode-secondary;
+  }
+
+  .status-bar {
+    @apply h-6 flex items-center px-3 justify-between;
+    @apply text-[11px] select-none;
+  }
+
+  .status-bar-item {
+    @apply flex items-center gap-1 px-1 py-0.5 rounded;
+    @apply cursor-pointer transition-colors;
+  }
+
+  .icon-sm {
+    @apply text-sm leading-none;
+  }
+
+  .icon-base {
+    @apply text-base leading-none;
+  }
+
+  .icon-lg {
+    @apply text-lg leading-none;
+  }
+}
+
+@layer utilities {
+  .focus-vscode:focus-visible {
+    outline: 2px solid var(--vscode-focusBorder);
+    outline-offset: 2px;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .selection-vscode::selection {
     background-color: var(--vscode-editor-selectionBackground);
   }
-
-  /* Status Bar Variants */
-  .bg-vscode-status-bar-debug {
-    background-color: var(--vscode-statusBar-debuggingBackground);
-  }
-
-  .bg-vscode-status-bar-no-folder {
-    background-color: var(--vscode-statusBar-noFolderBackground);
-  }
-
-  /* Menu Utilities */
-  .bg-vscode-menu {
-    background-color: var(--vscode-menu-background);
-  }
-
-  .border-vscode-menu {
-    border-color: var(--vscode-menu-border);
-  }
-
-  .text-vscode-menu {
-    color: var(--vscode-menu-foreground);
-  }
-
-  .bg-vscode-menu-selection {
-    background-color: var(--vscode-menu-selectionBackground);
-  }
-
-  .text-vscode-menu-selection {
-    color: var(--vscode-menu-selectionForeground);
-  }
-}
+} */

@@ -1,152 +1,283 @@
 import React from "react";
 
-const colors = [
+interface ColorDef {
+  name: string;
+  category: string;
+  vscodeVar: string;
+}
+
+const colors: ColorDef[] = [
+  // --- Base ---
   {
-    name: "Primary",
-    variable: "--color-vscode-primary",
-    vscodeVar: "--vscode-button-background",
-  },
-  {
-    name: "Primary Hover",
-    variable: "--color-vscode-primary-hover",
-    vscodeVar: "--vscode-button-hoverBackground",
-  },
-  {
-    name: "Text",
-    variable: "--color-vscode-text",
-    vscodeVar: "--vscode-foreground",
-  },
-  {
-    name: "Secondary Text",
-    variable: "--color-vscode-secondary",
-    vscodeVar: "--vscode-descriptionForeground",
-  },
-  {
-    name: "Background",
-    variable: "--color-vscode-background",
+    category: "Base",
+    name: "Editor Background",
     vscodeVar: "--vscode-editor-background",
   },
   {
-    name: "Sidebar",
-    variable: "--color-vscode-sidebar",
-    vscodeVar: "--vscode-sideBar-background",
+    category: "Base",
+    name: "Editor Foreground",
+    vscodeVar: "--vscode-editor-foreground",
   },
   {
-    name: "Input Background",
-    variable: "--color-vscode-input-bg",
-    vscodeVar: "--vscode-input-background",
-  },
-  {
-    name: "Input Border",
-    variable: "--color-vscode-input",
-    vscodeVar: "--vscode-input-border",
-  },
-  {
-    name: "Focus Border",
-    variable: "--color-vscode-focus",
-    vscodeVar: "--vscode-focusBorder",
-  },
-  {
-    name: "Border",
-    variable: "--color-vscode",
-    vscodeVar: "--vscode-panel-border",
-  },
-  {
-    name: "Error",
-    variable: "--color-vscode-error",
-    vscodeVar: "--vscode-errorForeground",
-  },
-  {
-    name: "List Active",
-    variable: "--color-vscode-list-active",
-    vscodeVar: "--vscode-list-activeSelectionBackground",
-  },
-  {
-    name: "List Hover",
-    variable: "--color-vscode-list-hover",
-    vscodeVar: "--vscode-list-hoverBackground",
-  },
-  {
-    name: "Activity Bar",
-    variable: "--color-vscode-activity-bar",
-    vscodeVar: "--vscode-activityBar-background",
-  },
-  {
-    name: "Status Bar",
-    variable: "--color-vscode-status-bar",
-    vscodeVar: "--vscode-statusBar-background",
-  },
-  {
-    name: "Widget Bg",
-    variable: "--color-vscode-widget-bg",
+    category: "Base",
+    name: "Widget Background",
     vscodeVar: "--vscode-editorWidget-background",
   },
   {
+    category: "Base",
+    name: "Widget Border",
+    vscodeVar: "--vscode-editorWidget-border",
+  },
+
+  // --- Input ---
+  {
+    category: "Input",
+    name: "Input Background",
+    vscodeVar: "--vscode-input-background",
+  },
+  {
+    category: "Input",
+    name: "Input Foreground",
+    vscodeVar: "--vscode-input-foreground",
+  },
+  {
+    category: "Input",
+    name: "Placeholder",
+    vscodeVar: "--vscode-input-placeholderForeground",
+  },
+  {
+    category: "Input",
+    name: "Input Border",
+    vscodeVar: "--vscode-input-border",
+  },
+  {
+    category: "Input",
+    name: "Validation Info",
+    vscodeVar: "--vscode-inputValidation-infoBackground",
+  },
+  {
+    category: "Input",
+    name: "Validation Warning",
+    vscodeVar: "--vscode-inputValidation-warningBackground",
+  },
+  {
+    category: "Input",
+    name: "Validation Error",
+    vscodeVar: "--vscode-inputValidation-errorBackground",
+  },
+
+  // --- Buttons ---
+  {
+    category: "Button",
+    name: "Button Background",
+    vscodeVar: "--vscode-button-background",
+  },
+  {
+    category: "Button",
+    name: "Button Foreground",
+    vscodeVar: "--vscode-button-foreground",
+  },
+  {
+    category: "Button",
+    name: "Button Hover",
+    vscodeVar: "--vscode-button-hoverBackground",
+  },
+  {
+    category: "Button",
+    name: "Secondary Button",
+    vscodeVar: "--vscode-button-secondaryBackground",
+  },
+
+  // --- Lists & Menus ---
+  {
+    category: "List/Menu",
+    name: "List Hover",
+    vscodeVar: "--vscode-list-hoverBackground",
+  },
+  {
+    category: "List/Menu",
+    name: "List Active",
+    vscodeVar: "--vscode-list-activeSelectionBackground",
+  },
+  {
+    category: "List/Menu",
+    name: "Menu Background",
+    vscodeVar: "--vscode-menu-background",
+  },
+  {
+    category: "List/Menu",
+    name: "Menu Foreground",
+    vscodeVar: "--vscode-menu-foreground",
+  },
+  {
+    category: "List/Menu",
+    name: "Menu Selection",
+    vscodeVar: "--vscode-menu-selectionBackground",
+  },
+
+  // --- Status Bar ---
+  {
+    category: "Status Bar",
+    name: "Status Bar Bg",
+    vscodeVar: "--vscode-statusBar-background",
+  },
+  {
+    category: "Status Bar",
+    name: "Status Bar Fg",
+    vscodeVar: "--vscode-statusBar-foreground",
+  },
+  {
+    category: "Status Bar",
+    name: "Remote Bg",
+    vscodeVar: "--vscode-statusBarItem-remoteBackground",
+  },
+  {
+    category: "Status Bar",
+    name: "Error Bg",
+    vscodeVar: "--vscode-statusBarItem-errorBackground",
+  },
+
+  // --- Terminal ---
+  {
+    category: "Terminal",
+    name: "Terminal Background",
+    vscodeVar: "--vscode-terminal-background",
+  },
+  {
+    category: "Terminal",
+    name: "Terminal Foreground",
+    vscodeVar: "--vscode-terminal-foreground",
+  },
+  {
+    category: "Terminal",
+    name: "Ansi Green",
+    vscodeVar: "--vscode-terminal-ansiGreen",
+  },
+  {
+    category: "Terminal",
+    name: "Ansi Blue",
+    vscodeVar: "--vscode-terminal-ansiBlue",
+  },
+  {
+    category: "Terminal",
+    name: "Ansi Red",
+    vscodeVar: "--vscode-terminal-ansiRed",
+  },
+  {
+    category: "Terminal",
+    name: "Ansi Yellow",
+    vscodeVar: "--vscode-terminal-ansiYellow",
+  },
+
+  // --- Badges ---
+  {
+    category: "Badge",
+    name: "Badge Background",
+    vscodeVar: "--vscode-badge-background",
+  },
+  {
+    category: "Badge",
+    name: "Badge Foreground",
+    vscodeVar: "--vscode-badge-foreground",
+  },
+
+  // --- Panel/SideBar ---
+  {
+    category: "Panel",
+    name: "Panel Border",
+    vscodeVar: "--vscode-panel-border",
+  },
+  {
+    category: "Panel",
+    name: "Sidebar Bg",
+    vscodeVar: "--vscode-sideBar-background",
+  },
+  {
+    category: "Panel",
+    name: "Activity Bar Bg",
+    vscodeVar: "--vscode-activityBar-background",
+  },
+
+  // --- Editor ---
+  {
+    category: "Editor",
     name: "Selection",
-    variable: "--color-vscode-selection",
     vscodeVar: "--vscode-editor-selectionBackground",
   },
   {
-    name: "Status Bar Debug",
-    variable: "--color-vscode-status-bar-debug",
-    vscodeVar: "--vscode-statusBar-debuggingBackground",
+    category: "Editor",
+    name: "Cursor",
+    vscodeVar: "--vscode-editorCursor-foreground",
   },
   {
-    name: "Status Bar No Folder",
-    variable: "--color-vscode-status-bar-no-folder",
-    vscodeVar: "--vscode-statusBar-noFolderBackground",
+    category: "Editor",
+    name: "Line Highlight",
+    vscodeVar: "--vscode-editor-lineHighlightBackground",
   },
 ];
 
+const groupedColors = colors.reduce(
+  (acc, color) => {
+    if (!acc[color.category]) {
+      acc[color.category] = [];
+    }
+    acc[color.category].push(color);
+    return acc;
+  },
+  {} as Record<string, ColorDef[]>,
+);
+
+const categories = Object.keys(groupedColors);
+
 export const ColorBlock: React.FC = () => {
   return (
-    <div className="p-4 w-full bg-vscode-background text-vscode font-mono">
-      <h2 className="text-lg font-bold mb-4 border-b border-vscode pb-2">
-        Theme Colors
-      </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {colors.map((color) => (
-          <div
-            key={color.variable}
-            className="flex flex-col border border-vscode rounded-md overflow-hidden bg-vscode-sidebar"
-          >
-            {/* Color Preview */}
-            <div
-              className="h-24 w-full transition-colors"
-              style={{ backgroundColor: `var(${color.variable})` }}
-            />
-
-            {/* Details */}
-            <div className="p-3 text-xs space-y-2">
-              <div className="font-bold text-sm">{color.name}</div>
-
-              <div>
-                <div className="text-vscode-secondary text-[10px] uppercase tracking-wider mb-0.5">
-                  Variable
-                </div>
-                <code
-                  className="bg-vscode-input-bg px-1.5 py-0.5 rounded select-all block truncate"
-                  title={color.variable}
-                >
-                  {color.variable}
-                </code>
-              </div>
-
-              <div>
-                <div className="text-vscode-secondary text-[10px] uppercase tracking-wider mb-0.5">
-                  VS Code Map
-                </div>
-                <code
-                  className="bg-vscode-input-bg px-1.5 py-0.5 rounded select-all block truncate text-vscode-secondary"
-                  title={color.vscodeVar}
-                >
-                  var({color.vscodeVar})
-                </code>
-              </div>
-            </div>
-          </div>
-        ))}
+    <div className="p-6 w-full font-mono bg-vscode-bg text-vscode-fg">
+      <div className="mb-6">
+        <h2 className="text-xl font-bold mb-2">VSCode Theme Variables</h2>
+        <p className="text-sm text-vscode-secondary">
+          Visual reference of available theme variables mapped in Tailwind.
+        </p>
       </div>
+
+      {categories.map((category) => (
+        <div key={category} className="mb-8">
+          <h3 className="text-base font-bold mb-3 pb-2 border-b border-vscode-border">
+            {category}
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {groupedColors[category].map((color, idx) => (
+              <div
+                key={idx}
+                className="flex flex-col border border-vscode-border rounded overflow-hidden bg-vscode-widget hover:shadow-lg transition-shadow"
+              >
+                {/* Color Preview */}
+                <div
+                  className="h-12 w-full"
+                  style={{
+                    backgroundColor: `var(${color.vscodeVar})`,
+                  }}
+                />
+
+                {/* Details */}
+                <div className="p-3 space-y-1">
+                  <div
+                    className="font-medium text-xs truncate"
+                    title={color.name}
+                  >
+                    {color.name}
+                  </div>
+                  <code
+                    className="text-[10px] text-vscode-secondary block truncate select-all"
+                    title={color.vscodeVar}
+                  >
+                    {color.vscodeVar}
+                  </code>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 };

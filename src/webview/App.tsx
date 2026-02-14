@@ -7,7 +7,7 @@ import { useExtensionMessage } from "./hooks/useExtensionMessage";
 import { ShellBlock } from "./components/ShellBlock";
 import { InputSection } from "./components/InputSection";
 import { defaultDoc } from "../utils/constants";
-import ColorBlock from "./components/colorBlock";
+import { ColorBlock } from "./components/colorBlock";
 
 declare const acquireVsCodeApi: () => { postMessage: (message: any) => void };
 
@@ -79,12 +79,12 @@ export default function App() {
   };
 
   return (
-    <div className="bg-vscode-editor-background h-screen flex flex-col font-mono text-sm antialiased overflow-hidden">
+    <div className="bg-vscode-background h-screen flex flex-col font-mono text-sm antialiased overflow-hidden">
       {/* Scrollable Main Area */}
       <main className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* Empty State */}
         {doc.blocks.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full opacity-50 text-vscode-descriptionForeground">
+          <div className="flex flex-col items-center justify-center h-full opacity-50 text-vscode-secondary">
             <div className="text-xl mb-2">Welcome to Flow</div>
             <div className="text-sm">Type a command below to start</div>
           </div>

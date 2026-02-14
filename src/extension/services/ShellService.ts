@@ -25,8 +25,8 @@ export class ShellService {
     );
     const profiles = config.get<Record<string, any>>(platformKey) || {};
 
-    console.log(JSON.stringify(config));
-    console.log(JSON.stringify(profiles));
+    // console.log(JSON.stringify(config));
+    // console.log(JSON.stringify(profiles));
     const shells: ShellConfig[] = [];
 
     for (const [label, profile] of Object.entries(profiles)) {
@@ -34,35 +34,35 @@ export class ShellService {
         continue;
       }
 
-      console.log(`[ShellService] Checking profile: "${label}"`);
+      // console.log(`[ShellService] Checking profile: "${label}"`);
 
       let shellPath: string | null = null;
 
       // 1. Handle "Source" (e.g., "source": "Git Bash")
       if (profile.source) {
-        console.log(`[ShellService]   -> Handling Source: ${profile.source}`);
+        // console.log(`[ShellService]   -> Handling Source: ${profile.source}`);
         if (profile.source === "PowerShell") {
           const pwsh = this.findPwsh();
           if (pwsh) {
-            console.log(`[ShellService]   -> Found pwsh: ${pwsh}`);
+            // console.log(`[ShellService]   -> Found pwsh: ${pwsh}`);
             shellPath = pwsh;
           } else {
-            console.log(
-              `[ShellService]   -> pwsh not found, fallback to powershell.exe`,
-            );
+            // console.log(
+            // `[ShellService]   -> pwsh not found, fallback to powershell.exe`,
+            // );
             shellPath = this.findOnPath("powershell.exe");
           }
         } else {
           const binaryName = this.mapSourceToBinary(profile.source);
           if (binaryName) {
-            console.log(
-              `[ShellService]   -> Mapped source to binary: ${binaryName}`,
-            );
+            // console.log(
+            // `[ShellService]   -> Mapped source to binary: ${binaryName}`,
+            // );
             shellPath = this.findOnPath(binaryName);
           } else {
-            console.log(
-              `[ShellService]   -> No binary mapping found for source: ${profile.source}`,
-            );
+            // console.log(
+            // `[ShellService]   -> No binary mapping found for source: ${profile.source}`,
+            // );
           }
         }
       }
@@ -72,18 +72,18 @@ export class ShellService {
         const paths = Array.isArray(profile.path)
           ? profile.path
           : [profile.path];
-        console.log(
-          `[ShellService]   -> Handling Explicit Path(s): ${JSON.stringify(paths)}`,
-        );
+        // console.log(
+        // `[ShellService]   -> Handling Explicit Path(s): ${JSON.stringify(paths)}`,
+        // );
 
         for (const p of paths) {
           const expanded = this.expandVariables(p);
-          console.log(`[ShellService]     -> Checking path: ${expanded}`);
+          // console.log(`[ShellService]     -> Checking path: ${expanded}`);
 
           // Check if it exists directly
           if (this.pathExists(expanded)) {
             shellPath = expanded;
-            console.log(`[ShellService]     -> Found direct path: ${expanded}`);
+            // console.log(`[ShellService]     -> Found direct path: ${expanded}`);
             break;
           } else {
             // Try finding it in PATH if it's just a binary name
@@ -92,26 +92,26 @@ export class ShellService {
               const found = this.findOnPath(basename);
               if (found) {
                 shellPath = found;
-                console.log(`[ShellService]     -> Found via PATH: ${found}`);
+                // console.log(`[ShellService]     -> Found via PATH: ${found}`);
                 break;
               }
             }
-            console.log(`[ShellService]     -> Not found: ${expanded}`);
+            // console.log(`[ShellService]     -> Not found: ${expanded}`);
           }
         }
       }
 
       if (shellPath) {
-        console.log(`[ShellService]   => Resolved to: ${shellPath}`);
+        // console.log(`[ShellService]   => Resolved to: ${shellPath}`);
         shells.push({
           label: label,
           path: shellPath,
           icon: profile.icon || this.inferIcon(label),
         });
       } else {
-        console.log(
-          `[ShellService]   => Failed to resolve shell path for profile: ${label}`,
-        );
+        // console.log(
+        // `[ShellService]   => Failed to resolve shell path for profile: ${label}`,
+        // );
       }
     }
 
@@ -132,32 +132,32 @@ export class ShellService {
       // 1. Try standard path lookup first
       const onPath = this.findOnPath(binary);
       if (onPath) {
-        console.log(`[findPwsh] Found via findOnPath: ${onPath}`);
+        // console.log(`[findPwsh] Found via findOnPath: ${onPath}`);
         return onPath;
       }
-      console.log(`[findPwsh] '${binary}' not found in PATH via findOnPath`);
+      // console.log(`[findPwsh] '${binary}' not found in PATH via findOnPath`);
 
       // 2. Fallback: Ask PowerShell where pwsh is (handles WindowsApps)
       if (this.isWindows) {
         // Try to use pwsh if available (faster), otherwise use powershell.exe
         const psExecutable = "powershell.exe"; // Use old PowerShell to find new PowerShell
         const cmd = `${psExecutable} -NoProfile -Command "Get-Command -Name pwsh -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Path"`;
-        console.log(`[findPwsh] Executing fallback command: ${cmd}`);
+        // console.log(`[findPwsh] Executing fallback command: ${cmd}`);
 
         const result = cp.execSync(cmd, { encoding: "utf8" }).trim();
-        console.log(`[findPwsh] Command result: ${JSON.stringify(result)}`);
+        // console.log(`[findPwsh] Command result: ${JSON.stringify(result)}`);
 
         // Get-Command might return multiple lines
         const firstPath = result.split(/\r?\n/)[0]?.trim();
-        console.log(`[findPwsh] First path candidate: ${firstPath}`);
+        // console.log(`[findPwsh] First path candidate: ${firstPath}`);
 
         if (firstPath && this.pathExists(firstPath)) {
-          console.log(`[findPwsh] Verified path exists: ${firstPath}`);
+          // console.log(`[findPwsh] Verified path exists: ${firstPath}`);
           return firstPath;
         } else if (firstPath) {
-          console.log(
-            `[findPwsh] Path validation failed for: ${firstPath}, but returning anyway (App Execution Alias)`,
-          );
+          // console.log(
+          // `[findPwsh] Path validation failed for: ${firstPath}, but returning anyway (App Execution Alias)`,
+          // );
           return firstPath; // Return even if validation fails (it's an alias)
         }
       }
@@ -223,13 +223,13 @@ export class ShellService {
   private findOnPath(binaryName: string): string | null {
     try {
       const cmd = this.isWindows ? "where" : "which";
-      console.log(`[findOnPath] Searching for: ${binaryName}`);
+      // console.log(`[findOnPath] Searching for: ${binaryName}`);
 
       // Execute the command
       const result = cp.execSync(`${cmd} "${binaryName}"`, {
         encoding: "utf8",
       });
-      console.log(`[findOnPath] Raw result: ${JSON.stringify(result)}`);
+      // console.log(`[findOnPath] Raw result: ${JSON.stringify(result)}`);
 
       // Parse results (where/which might return multiple lines)
       const lines = result
@@ -237,34 +237,34 @@ export class ShellService {
         .map((l) => l.trim())
         .filter((l) => l);
 
-      console.log(`[findOnPath] Found ${lines.length} candidate(s)`);
+      // console.log(`[findOnPath] Found ${lines.length} candidate(s)`);
 
       for (const line of lines) {
-        console.log(`[findOnPath]   Checking: ${line}`);
+        // console.log(`[findOnPath]   Checking: ${line}`);
 
         // For Windows App Execution Aliases, pathExists might fail
         // but the path is still valid, so we trust 'where' output
         if (this.isWindows && line.includes("WindowsApps")) {
-          console.log(
-            `[findOnPath]   Detected WindowsApps alias, accepting without validation`,
-          );
+          // console.log(
+          // `[findOnPath]   Detected WindowsApps alias, accepting without validation`,
+          // );
           return line;
         }
 
         // For normal paths, verify they exist
         if (this.pathExists(line)) {
-          console.log(`[findOnPath]   Verified: ${line}`);
+          // console.log(`[findOnPath]   Verified: ${line}`);
           return line;
         } else {
-          console.log(`[findOnPath]   Path validation failed: ${line}`);
+          // console.log(`[findOnPath]   Path validation failed: ${line}`);
         }
       }
 
       // If we found results but none validated, return first one anyway
       if (lines.length > 0) {
-        console.log(
-          `[findOnPath] No validated paths, returning first result: ${lines[0]}`,
-        );
+        // console.log(
+        // `[findOnPath] No validated paths, returning first result: ${lines[0]}`,
+        // );
         return lines[0];
       }
 

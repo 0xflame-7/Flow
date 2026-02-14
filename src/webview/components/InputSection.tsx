@@ -63,60 +63,56 @@ export const InputSection: React.FC<InputSectionProps> = ({
   };
 
   return (
-    <div className="bg-vscode-editor-background p-4 border-t border-vscode-panel-border shrink-0 z-40 relative">
-      <div className="flex flex-col bg-vscode-input-background border border-vscode-input-border focus-within:border-vscode-focusBorder focus-within:ring-1 focus-within:ring-vscode-focusBorder/30 transition-all duration-100 rounded-sm">
+    <div className="bg-(--vscode-editor-background) p-4 border-t border-(--vscode-panel-border) shrink-0 z-40 relative">
+      <div className="flex flex-col bg-(--vscode-input-background) border border-(--vscode-panel-border) focus-within:border-(--vscode-focusBorder) focus-within:ring-1 focus-within:ring-(--vscode-focusBorder)/30 transition-all duration-100 rounded-sm overflow-hidden">
         {/* Context Bar */}
-        <div className="flex items-center gap-x-2 text-xs bg-vscode-sidebar px-3 py-1.5 border-b border-vscode-panel-border select-none rounded-t-sm">
-          <span className="text-vscode-button-background font-bold">
+        <div className="flex items-center gap-x-2 text-xs bg-(--vscode-editorWidget-background) px-3 py-1.5 border-b border-[#505050] select-none font-mono">
+          <span className="text-(--vscode-button-background) font-bold">
             [local]
           </span>
 
-          <div className="flex items-center gap-1 text-vscode-descriptionForeground">
+          <div className="flex items-center gap-1 text-(--vscode-descriptionForeground)">
             <GitBranch size={14} />
-            <span>{context.branch || "main"}</span>
+            <span>{context.branch}</span>
           </div>
 
-          <div className="flex items-center gap-1 text-vscode-descriptionForeground ml-2">
+          <div className="flex items-center gap-1 text-(--vscode-descriptionForeground)">
             <FolderOpen size={14} />
             <span
-              className="text-vscode-foreground truncate max-w-[200px]"
+              className="text-(--vscode-button-background) truncate max-w-[300px]"
               title={context.cwd}
             >
-              {context.cwd || "~"}
+              {context.cwd}
             </span>
           </div>
-
-          <span className="text-vscode-button-background font-bold ml-1">
-            $
-          </span>
         </div>
 
         {/* Input Area */}
-        <div className="flex items-center bg-vscode-input-background rounded-b-sm">
+        <div className="flex items-center bg-(--vscode-input-background)">
           <div className="relative" ref={menuRef}>
-            <div className="flex items-center border-r border-vscode-panel-border shrink-0">
+            <div className="flex items-center border-r border-(--vscode-panel-border) shrink-0">
               <button
                 onClick={() => setShowShellMenu(!showShellMenu)}
-                className="flex items-center gap-1.5 px-3 py-2 text-vscode-descriptionForeground hover:text-vscode-foreground hover:bg-vscode-list-hoverBackground transition-colors group"
+                className="flex items-center gap-1.5 px-3 py-2 text-(--vscode-input-foreground) hover:text-(--vscode-editor-foreground) hover:bg-(--vscode-editorWidget-background) transition-colors group"
               >
                 <div className="flex items-center gap-2">
                   <span
                     className={`codicon ${availableShells.find((s) => s.path === context.shell)?.icon || "codicon-terminal"}`}
                   />
-                  <span className="text-[11px] font-bold tracking-tight uppercase max-w-[100px] truncate">
+                  <span className="text-[11px] font-bold tracking-tight uppercase max-w-[100px] truncate font-mono">
                     {getShellDisplay()}
                   </span>
                 </div>
                 <ChevronDown
                   size={14}
-                  className="group-hover:text-vscode-foreground"
+                  className="text-(--vscode-descriptionForeground) group-hover:text-(--vscode-editor-foreground)"
                 />
               </button>
             </div>
 
             {/* Shell Dropdown */}
             {showShellMenu && (
-              <div className="absolute bottom-full left-0 mb-1 w-80 bg-vscode-menu border border-vscode-menu rounded shadow-xl z-100 py-1 max-h-80 overflow-y-auto">
+              <div className="absolute bottom-full left-0 mb-1 w-80 bg-(--vscode-menu-background) border border-(--vscode-menu-border) rounded shadow-xl z-100 py-1 max-h-80 overflow-y-auto">
                 {availableShells.map((option) => {
                   Web.info(
                     `[InputSection] Shell: ${option.label} -> ${option.path}`,
@@ -131,16 +127,16 @@ export const InputSection: React.FC<InputSectionProps> = ({
                         onShellChange(option.path);
                         setShowShellMenu(false);
                       }}
-                      className={`nav-item flex items-center w-full px-4 py-2 text-sm text-left hover:bg-vscode-menu-selection hover:text-vscode-menu-selection-fg transition-colors ${
+                      className={`nav-item flex items-center w-full px-4 py-2 text-sm text-left hover:bg-(--vscode-menu-selectionBackground) hover:text-(--vscode-menu-selectionForeground) transition-colors ${
                         context.shell === option.path
-                          ? "text-vscode-foreground font-medium bg-vscode-menu-selection/10"
-                          : "text-vscode-menu"
+                          ? "text-(--vscode-editor-foreground) font-medium bg-(--vscode-menu-selectionBackground)/10"
+                          : "text-(--vscode-menu-foreground)"
                       }`}
                       title={option.path}
                     >
                       <span className={`codicon ${option.icon} mr-3 text-lg`} />
                       <div className="flex flex-col gap-0.5 min-w-0">
-                        <span className="truncate font-medium">
+                        <span className="truncate font-medium font-mono">
                           {option.label}
                         </span>
                         <span className="truncate text-[10px] opacity-70">
@@ -154,11 +150,14 @@ export const InputSection: React.FC<InputSectionProps> = ({
             )}
           </div>
 
-          <div className="flex-1 flex items-center px-3 py-2">
+          <div className="flex-1 flex items-center gap-2 px-3 py-2">
+            <span className="text-(--vscode-button-background) font-bold">
+              $
+            </span>
             <input
               ref={inputRef}
               autoFocus
-              className="flex-1 bg-transparent border-none p-0 text-vscode-foreground focus:ring-0 placeholder-vscode-descriptionForeground font-mono text-sm leading-6 outline-none"
+              className="flex-1 border-none p-0 text-(--vscode-input-foreground) caret-(--vscode-editorCursor-foreground) selection:bg-(--vscode-editor-selectionBackground) focus:ring-0 placeholder-(--vscode-input-placeholderForeground) font-mono text-sm leading-6 outline-none"
               placeholder="Type a command..."
               type="text"
               value={input}
@@ -168,7 +167,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
             <button
               onClick={handleRun}
               disabled={!input.trim()}
-              className="ml-2 text-vscode-button-background hover:text-vscode-button-hoverBackground hover:bg-vscode-button-secondaryHoverBackground rounded p-1 flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="ml-2 text-(--vscode-button-background) hover:text-(--vscode-button-foreground) rounded p-1 flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/5"
             >
               <ArrowRight size={18} />
             </button>
